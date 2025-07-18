@@ -1,0 +1,21 @@
+blobtools create -i your_assembly.fasta -c astrotoma.coverage -o astrotoma_assembly_blob
+blobtools annotate -i astrotoma_assebmly_blob -m blast -t blastn -d blobtoolkit/nr -o astrotoma
+
+module load python/anaconda/3.8.6
+#module load diamond
+source activate blobtools2
+ASSEMBLY="Astrotoma_agassizii_Op887_Dovetail_Haplotype1.fasta"
+#Create Blob_dir
+blobtoolkit/blobtools2/src/blobtools/blobtools.py create --fasta Genomes/$ASSEMBLY --taxid 462866 --taxdump blobtoolkit/taxdump $ASSEMBLY.blobdir
+## Add BUSCO
+#blobtoolkit/blobtools2/src/blobtools/blobtools.py add --busco genome.busco.metazoa_odb10.full_summary.tsv ~/path/to/genome/
+## Create Diamond Search
+diamond blastx --db ~/databases/reference_proteomes.dmnd --query genome.bp.p_ctg.fasta --outfmt 6 qseqid staxids bitscore qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore --sensitive --max-target-seqs 1 --evalue 1e-25 --threads 32 > genome.diamond.blastx.out 
+##Add coverage as txt
+#blobtoolkit/blobtools2/src/blobtools/blobtools.py add --text genome_cov.txt --text-header --text-cols 'id=identifier,meandepth=my_reads_cov' ~/path/to/genome
+##Add meandepth value above as y-axis
+#blobtoolkit/blobtools2/src/blobtools/blobtools.py add --key plot.y=my_reads_cov ~/path/to/genome/
+#Add hits from uniprot
+#blobtoolkit/blobtools2/src/blobtools/blobtools.py add --hits Lepidodermella_sp_HIFI.diamond.blastx.out --taxrule bestsumorder --taxdump ~/databases/new_taxdump ~/path/to/genome
+
+diamond blastx --threads 20 -c 1 --query genome_funannotate.fasta --db ~/NCBI_dbs/NR/nr.dmnd --outfmt 6 qseqid staxids bitscore sseqid pident length mismatch gapopen qstart qend sstart send evalue --sensitive --max-target-seqs 1 --evalue 1e-25 --out Ophio.blast --taxonmap ~/NCBI_dbs/NR/prot.accession2taxid.gz --taxonnodes ~/NCBI_dbs/NR/nodes.dmp
