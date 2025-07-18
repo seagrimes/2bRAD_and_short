@@ -1,0 +1,51 @@
+# Get SnpEff
+git clone https://github.com/pcingola/SnpEff.git
+
+# Get SnpSift as well
+git clone https://github.com/pcingola/SnpSift.git
+#To manually install libraries if they are not there from maven: 
+# Go to 'lib' dir
+cd SnpEff/lib
+
+# Antlr
+mvn install:install-file \
+    -Dfile=antlr-4.5.1-complete.jar \
+    -DgroupId=org.antlr \
+    -DartifactId=antlr \
+    -Dversion=4.5.1 \
+    -Dpackaging=jar
+
+# BioJava core
+mvn install:install-file \
+    -Dfile=biojava3-core-3.0.7.jar \
+    -DgroupId=org.biojava \
+    -DartifactId=biojava3-core \
+    -Dversion=3.0.7 \
+    -Dpackaging=jar
+
+# BioJava structure
+mvn install:install-file \
+    -Dfile=biojava3-structure-3.0.7.jar \
+    -DgroupId=org.biojava \
+    -DartifactId=biojava3-structure \
+    -Dversion=3.0.7 \
+    -Dpackaging=jar
+
+# To build: 
+cd $HOME/snpEff
+
+# Create link to scripts_build directory if it doesn't exist
+ln -s $HOME/workspace/SnpEff/scripts_build
+
+# Invoke the build script
+./scripts_build/make.sh
+
+
+# add reference to the config file... 
+java -Xmx8g path/to/snpEff/snpEff.jar -c path/to/snpEff/snpEff.config <genome> <input.vcf> > <output.annotated.vcf>
+
+#if you need gff3 or gtf instead
+java -Xmx8g -jar snpEff.jar build -gtf22 -v <genome>
+#To annotate a vcf file
+java -jar snpEff.jar build -gff3 -v <genome>
+
