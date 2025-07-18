@@ -1,3 +1,3 @@
-# 2bRAD Echinoderms of Antarctica
+# Genomes of Antarctica
 # 
 
