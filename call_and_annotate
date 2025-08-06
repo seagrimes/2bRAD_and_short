@@ -1,0 +1,55 @@
+#Call and annotate variants with gatk and 
+
+#MarkDuplicates
+gatk --java-options "-Xmx4G" MarkDuplicates -R $ref -I $file -M $file\.dup_metrics -O $file\.markdup.bam
+
+#HaplotypeCaller to call variants in GVCF mode
+gatk --java-options "-Xmx16G" HaplotypeCaller --native-pair-hmm-threads 24 -R $ref -I $file -ERC GVCF --sample-ploidy 2 -O $file\.raw_variants.g.vcf
+
+#GenotypeGVCFs
+gatk --java-options "-Xmx4G" GenotypeGVCFs -R $ref -V $file -O $file\.genotype.g.vcf
+
+#CombineGVCFs for joint call 
+gatk CombineGVCFs -R $ref --variant $file\.genotype.g.vcf
+
+#Variant recalibration with VQSR 
+
+#Filter raw snps and indels to refine genotypes for annotation 
+
+#Annotation steps with funannotate or braker3.. starting with predicting genes
+
+#RepeatModeler 1.0.11
+BuildDatabase -name $name $ref.fasta
+RepeatModeler -pa 38 -database #name >& $.run.out
+RepeatClassifier -consensi $gene-families.fa
+
+#Filter repeats agains known proteins
+mkdir $proteins
+cd $proteins
+
+wget $whatever_is_applicable_GCF_proteins.fa.gz
+wget $whatever_is_applicable2_GCF_proteins.fa.gz
+
+gunzip *.gz
+cat *.fa > $name_proteins.fa
+
+makeblastdb -in $name_proteins.fa -dbtype prot -out $proteins
+ cd ../
+
+#Filter repeats by matches to known echino proteins
+blastx -query astrotoma-families.fa -db ech_proteins/echino_proteins -num_threads 38 -outfmt 6 -evalue 5e-5 > $name-families.blastx_proteins.txt
+awk '{print $1}' $name-families.blastx_proteins.txt | sort | uniq | wc -l
+
+#Compare to total repeat library
+grep -c '>' $gene-families.fa
+
+awk '{print $1}' $gene-families.blastx_echino_proteins.txt | sort | uniq > repeat_ids_to_remove.txt
+
+awk 'BEGIN{while((getline<"repeat_ids_to_remove.txt")>0)l[">"$1]=1}/^>/{f=!l[$1]}f' $gene-families.fa > $gene-families.filtered.fa
+grep -c '>' #gene-families.filtered.fa
+
+#RepeatMasker
+RepeatMasker -e rmblast -pa 36 -s -lib $name-families.filtered.fa -gff $ref_genome.fasta -trf_prgm /usr/local/bin/
+
+bedtools maskfasta -soft -fi Astrotoma_agassizii_1_24.fasta -bed $ref.repeatmasker.gff -fo $ref.softmasked.fasta
+
